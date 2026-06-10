@@ -274,12 +274,12 @@
 
             // Yükleniyor durumuna geç
             btn.disabled = true;
-            btnText.innerText = "Ses Oluşturuluyor...";
+            btnText.innerText = "Kuyruğa Alınıyor...";
             spinner.style.display = "block";
             alertBox.style.display = "none";
 
             try {
-                // Sunucuya isteği gönder
+                // Sunucuya görevi oluşturması için istek gönder
                 const response = await fetch('/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -288,28 +288,70 @@
 
                 const data = await response.json();
 
-                if (response.ok && data.success) {
-                    showAlert('Başarılı! Dosyanız bilgisayarınıza indiriliyor...', 'success');
+                if (response.ok && data.success && data.task_id) {
+                    showAlert('İşlem sıraya alındı. Ses dosyası hazırlanıyor, lütfen bekleyin...', 'success');
                     
-                    // Dosyayı kullanıcıya zorla indir (trigger download)
-                    const a = document.createElement('a');
-                    a.href = data.download_url;
-                    // download özelliği ile dosyayı indir
-                    a.download = ''; 
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
+                    // Durum sorgulama (polling) döngüsünü başlat
+                    pollTaskStatus(data.task_id);
                 } else {
                     showAlert(data.error || 'Bir hata oluştu.', 'error');
+                    resetButton();
                 }
             } catch (error) {
-                showAlert('Sunucuya bağlanılamadı. Lütfen terminalden uygulamanın çalıştığına emin olun.', 'error');
-            } finally {
-                // Butonu eski haline getir
-                btn.disabled = false;
-                btnText.innerText = "Oluştur ve İndir 📥";
-                spinner.style.display = "none";
+                showAlert('Sunucuya bağlanılamadı. Lütfen sunucunun çalıştığından emin olun.', 'error');
+                resetButton();
             }
+        }
+
+        async function pollTaskStatus(taskId) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/status/${taskId}`);
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        clearInterval(interval);
+                        showAlert(data.error || 'Görev durumu sorgulanırken bir hata oluştu.', 'error');
+                        resetButton();
+                        return;
+                    }
+
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        showAlert('Başarılı! Dosyanız bilgisayarınıza indiriliyor...', 'success');
+                        
+                        // Dosyayı indir
+                        const a = document.createElement('a');
+                        a.href = data.download_url;
+                        a.download = ''; 
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        
+                        resetButton();
+                    } else if (data.status === 'failed') {
+                        clearInterval(interval);
+                        showAlert('Seslendirme başarısız oldu: ' + (data.error || 'Bilinmeyen Hata'), 'error');
+                        resetButton();
+                    } else if (data.status === 'processing') {
+                        // İşlem devam ediyor, kullanıcıyı bilgilendir
+                        const btnText = document.getElementById('btnText');
+                        btnText.innerText = "Ses Üretiliyor...";
+                    }
+                } catch (error) {
+                    // Geçici ağ hataları için sorgulamayı kesmeyip devam edelim
+                    console.error("Durum sorgulanırken ağ hatası oluştu:", error);
+                }
+            }, 3000); // Her 3 saniyede bir kontrol et
+        }
+
+        function resetButton() {
+            const btn = document.getElementById('generateBtn');
+            const btnText = document.getElementById('btnText');
+            const spinner = document.getElementById('spinner');
+            btn.disabled = false;
+            btnText.innerText = "Oluştur ve İndir 📥";
+            spinner.style.display = "none";
         }
 
         function showAlert(message, type) {
