@@ -92,7 +92,7 @@
             font-weight: 600;
         }
 
-        textarea, select {
+        textarea, select, input {
             width: 100%;
             background: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -104,7 +104,7 @@
             transition: all 0.3s ease;
         }
 
-        textarea:focus, select:focus {
+        textarea:focus, select:focus, input:focus {
             border-color: #8b5cf6;
             box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
         }
@@ -250,6 +250,11 @@
             </select>
         </div>
 
+        <div class="form-group">
+            <label for="filename">Dosya Adı (İsteğe Bağlı)</label>
+            <input type="text" id="filename" placeholder="Örn: ses-kaydi (Boş bırakılırsa rastgele isimlendirilir)">
+        </div>
+
         <button id="generateBtn" onclick="generateAudio()">
             <span id="btnText">Oluştur ve İndir 📥</span>
             <div class="spinner" id="spinner"></div>
@@ -323,7 +328,16 @@
                         // Dosyayı indir
                         const a = document.createElement('a');
                         a.href = data.download_url;
-                        a.download = ''; 
+                        
+                        // Özel dosya adını al
+                        const customName = document.getElementById('filename').value.trim();
+                        if (customName) {
+                            // Dosya adı .mp3 ile bitmiyorsa ekleyelim
+                            a.download = customName.toLowerCase().endsWith('.mp3') ? customName : customName + '.mp3';
+                        } else {
+                            a.download = ''; 
+                        }
+                        
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
