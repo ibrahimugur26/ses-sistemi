@@ -327,14 +327,14 @@
                         
                         // Dosyayı indir
                         const a = document.createElement('a');
-                        a.href = data.download_url;
                         
-                        // Özel dosya adını al
+                        // Özel dosya adını al ve URL'ye parametre olarak ekle
                         const customName = document.getElementById('filename').value.trim();
                         if (customName) {
-                            // Dosya adı .mp3 ile bitmiyorsa ekleyelim
+                            a.href = `${data.download_url}?name=${encodeURIComponent(customName)}`;
                             a.download = customName.toLowerCase().endsWith('.mp3') ? customName : customName + '.mp3';
                         } else {
+                            a.href = data.download_url;
                             a.download = ''; 
                         }
                         

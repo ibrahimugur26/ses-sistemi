@@ -88,7 +88,15 @@ def task_status(task_id):
 def download(filename):
     filepath = os.path.join(DOWNLOAD_FOLDER, filename)
     if os.path.exists(filepath):
-        return send_file(filepath, as_attachment=True)
+        custom_name = request.args.get('name')
+        response = send_file(filepath, as_attachment=True)
+        if custom_name:
+            # Türkçe karakterlerin ve boşlukların sorunsuz inmesi için güvenli formatlama yapıyoruz
+            if not custom_name.lower().endswith('.mp3'):
+                custom_name += '.mp3'
+            # Tarayıcıya yeni dosya adını bildiriyoruz
+            response.headers["Content-Disposition"] = f"attachment; filename={custom_name}"
+        return response
     return "Dosya bulunamadı", 404
 
 if __name__ == '__main__':
