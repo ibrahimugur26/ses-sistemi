@@ -78,27 +78,37 @@ async def _uret(metin, ses, vibe, hedef, ilerleme):
             )
             context = await browser.new_context(accept_downloads=True)
             page = await context.new_page()
-            await page.goto("https://www.openai.fm", wait_until="networkidle", timeout=60000)
+            async def sayfayi_hazirla():
+                await page.goto("https://www.openai.fm", wait_until="networkidle", timeout=60000)
+                try:
+                    await page.get_by_text(ses, exact=True).first.click(timeout=5000)
+                except Exception:
+                    pass  # varsayılan ses ile devam et
+                # Vibe kutusu (ilk textarea), script kutusu ikinci textarea
+                await page.locator("textarea").first.fill(vibe)
 
-            try:
-                await page.get_by_text(ses, exact=True).first.click(timeout=5000)
-            except Exception:
-                pass  # varsayılan ses ile devam et
-
-            # Vibe kutusu (ilk textarea), script kutusu ikinci textarea
-            await page.locator("textarea").first.fill(vibe)
-            script_kutusu = page.locator("textarea").nth(1)
+            await sayfayi_hazirla()
 
             dosyalar = []
             for i, parca in enumerate(parcalar, start=1):
                 ilerleme(i - 1, len(parcalar))
-                await script_kutusu.fill("")
-                await script_kutusu.fill(parca)
-                async with page.expect_download(timeout=90000) as dl:
-                    await page.get_by_text("Download", exact=False).last.click(timeout=10000)
-                download = await dl.value
                 yol = os.path.join(gecici, f"parca_{i:02d}.mp3")
-                await download.save_as(yol)
+                # Uzun metinlerde tek parçadaki geçici hata her şeyi bozmasın: 3 deneme
+                for deneme in range(1, 4):
+                    try:
+                        script_kutusu = page.locator("textarea").nth(1)
+                        await script_kutusu.fill("")
+                        await script_kutusu.fill(parca)
+                        async with page.expect_download(timeout=90000) as dl:
+                            await page.get_by_text("Download", exact=False).last.click(timeout=10000)
+                        download = await dl.value
+                        await download.save_as(yol)
+                        break
+                    except Exception:
+                        if deneme == 3:
+                            raise
+                        await asyncio.sleep(5)
+                        await sayfayi_hazirla()  # sayfayı sıfırlayıp tekrar dene
                 dosyalar.append(yol)
                 if i < len(parcalar):
                     await asyncio.sleep(2)

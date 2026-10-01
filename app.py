@@ -19,7 +19,7 @@ tasks = {}
 
 # OpenAI motoru tarayıcı açtığı için aynı anda tek iş çalışsın (sunucu belleğini korur)
 openai_kilit = threading.Semaphore(1)
-OPENAI_MAX_KARAKTER = 8000
+OPENAI_MAX_KARAKTER = 150000
 DOSYA_OMRU_SN = 60 * 60  # indirilen dosyalar 1 saat sonra silinir
 
 
