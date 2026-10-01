@@ -21,7 +21,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-x: hidden;
+            padding: 24px 0;
         }
 
         /* Arka plan parlama efektleri (Neon Lights) */
@@ -185,6 +186,59 @@
             color: #86efac;
         }
         
+        /* Sağlayıcı seçim ekranı */
+        .provider-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .provider-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 24px 16px;
+            text-align: center;
+            cursor: pointer;
+            color: #fff;
+            display: block;
+            transition: all 0.3s ease;
+        }
+
+        .provider-card:hover {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.35);
+            transform: translateY(-3px);
+        }
+
+        .provider-card .icon { font-size: 36px; margin-bottom: 10px; }
+        .provider-card h3 { font-size: 18px; margin-bottom: 6px; }
+        .provider-card p { font-size: 13px; color: #94a3b8; }
+
+        .back-link {
+            background: none;
+            border: none;
+            box-shadow: none;
+            width: auto;
+            padding: 0;
+            margin: 0 0 16px 0;
+            color: #a78bfa;
+            font-size: 14px;
+            font-weight: 600;
+            justify-content: flex-start;
+        }
+
+        .back-link:hover { transform: none; box-shadow: none; text-decoration: underline; }
+
+        .hidden { display: none !important; }
+
+        .hint { font-size: 12px; color: #94a3b8; margin-top: 6px; }
+
+        @media (max-width: 520px) {
+            .provider-grid { grid-template-columns: 1fr; }
+            .container { padding: 28px 20px; }
+        }
+
         /* Select elementinin içi */
         select option {
             background: #1e293b;
@@ -199,14 +253,54 @@
 
     <div class="container">
         <h1>Yapay Zeka Ses Stüdyosu</h1>
-        <p class="subtitle">Metninizi yazın, sesi seçin ve anında indirin</p>
+        <p class="subtitle" id="subtitle">Önce kullanmak istediğiniz ses motorunu seçin</p>
+
+        <!-- 1. Adım: Sağlayıcı seçimi -->
+        <div id="providerScreen" class="provider-grid">
+            <button type="button" class="provider-card" onclick="selectProvider('microsoft')">
+                <div class="icon">🎙️</div>
+                <h3>Microsoft</h3>
+                <p>Çok dilli, hızlı. Türkçe dahil çok sayıda ses.</p>
+            </button>
+            <button type="button" class="provider-card" onclick="selectProvider('openai')">
+                <div class="icon">✨</div>
+                <h3>OpenAI</h3>
+                <p>Doğal tonlar. Ses ve vibe (üslup) seçilebilir.</p>
+            </button>
+        </div>
+
+        <!-- 2. Adım: Seçilen sağlayıcının formu -->
+        <div id="studio" class="hidden">
+        <button type="button" class="back-link" onclick="backToProviders()">← Ses motorunu değiştir</button>
 
         <div class="form-group">
             <label for="text">Metin</label>
             <textarea id="text" placeholder="Sese dönüştürmek istediğiniz metni buraya yazın veya yapıştırın..."></textarea>
         </div>
 
-        <div class="form-group">
+        <!-- OpenAI ayarları -->
+        <div id="openaiFields" class="hidden">
+            <div class="form-group">
+                <label for="oaVoice">Ses Seçimi (OpenAI)</label>
+                <select id="oaVoice">
+                    {% for s in openai_sesler %}
+                    <option value="{{ s }}" {% if s == 'Fable' %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="oaVibe">Vibe (Üslup)</label>
+                <select id="oaVibe">
+                    {% for v in openai_vibeler %}
+                    <option value="{{ v }}">{{ v }}</option>
+                    {% endfor %}
+                </select>
+                <textarea id="oaVibeText" style="height:100px; margin-top:10px;"></textarea>
+                <p class="hint">Üslup talimatı İngilizce yazılır, istediğiniz gibi düzenleyebilirsiniz. En fazla 8000 karakter.</p>
+            </div>
+        </div>
+
+        <div class="form-group" id="microsoftFields">
             <label for="voice">Ses Seçimi (Diller & Tonlar)</label>
             <select id="voice">
                 <optgroup label="🇺🇸 İngilizce (ABD) - Tüm Ücretsiz Clipchamp Sesleri (17 Adet)">
@@ -261,12 +355,51 @@
         </button>
 
         <div id="statusAlert" class="alert"></div>
+        </div><!-- /studio -->
     </div>
 
     <script>
+        const OPENAI_VIBELER = {{ openai_vibeler | tojson }};
+        let currentProvider = null;
+
+        function selectProvider(provider) {
+            currentProvider = provider;
+            document.getElementById('providerScreen').classList.add('hidden');
+            document.getElementById('studio').classList.remove('hidden');
+            document.getElementById('microsoftFields').classList.toggle('hidden', provider !== 'microsoft');
+            document.getElementById('openaiFields').classList.toggle('hidden', provider !== 'openai');
+            document.getElementById('subtitle').innerText = provider === 'openai'
+                ? 'OpenAI: metni yazın, ses ve vibe seçin, indirin'
+                : 'Microsoft: metni yazın, sesi seçin ve anında indirin';
+            if (provider === 'openai' && !document.getElementById('oaVibeText').value) {
+                document.getElementById('oaVibeText').value = OPENAI_VIBELER[document.getElementById('oaVibe').value];
+            }
+            hideAlert();
+        }
+
+        function backToProviders() {
+            currentProvider = null;
+            document.getElementById('studio').classList.add('hidden');
+            document.getElementById('providerScreen').classList.remove('hidden');
+            document.getElementById('subtitle').innerText = 'Önce kullanmak istediğiniz ses motorunu seçin';
+            hideAlert();
+        }
+
+        function hideAlert() {
+            document.getElementById('statusAlert').style.display = 'none';
+        }
+
+        document.getElementById('oaVibe').addEventListener('change', (e) => {
+            document.getElementById('oaVibeText').value = OPENAI_VIBELER[e.target.value];
+        });
+
         async function generateAudio() {
             const text = document.getElementById('text').value;
-            const voice = document.getElementById('voice').value;
+            const provider = currentProvider || 'microsoft';
+            const voice = provider === 'openai'
+                ? document.getElementById('oaVoice').value
+                : document.getElementById('voice').value;
+            const vibe = provider === 'openai' ? document.getElementById('oaVibeText').value : '';
             const btn = document.getElementById('generateBtn');
             const btnText = document.getElementById('btnText');
             const spinner = document.getElementById('spinner');
@@ -288,7 +421,7 @@
                 const response = await fetch('/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, voice })
+                    body: JSON.stringify({ text, voice, provider, vibe })
                 });
 
                 const data = await response.json();
@@ -350,7 +483,11 @@
                     } else if (data.status === 'processing') {
                         // İşlem devam ediyor, kullanıcıyı bilgilendir
                         const btnText = document.getElementById('btnText');
-                        btnText.innerText = "Ses Üretiliyor...";
+                        btnText.innerText = data.progress && data.progress.includes('/')
+                            ? `Ses Üretiliyor... (${data.progress})`
+                            : "Ses Üretiliyor...";
+                    } else if (data.status === 'queued') {
+                        document.getElementById('btnText').innerText = "Sırada bekleniyor...";
                     }
                 } catch (error) {
                     // Geçici ağ hataları için sorgulamayı kesmeyip devam edelim
