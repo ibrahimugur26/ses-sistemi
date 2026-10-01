@@ -76,10 +76,31 @@ async def _uret(metin, ses, vibe, hedef, ilerleme):
             browser = await p.chromium.launch(
                 headless=True, args=["--no-sandbox", "--disable-dev-shm-usage"]
             )
-            context = await browser.new_context(accept_downloads=True)
+            context = await browser.new_context(
+                accept_downloads=True,
+                locale="en-US",
+                viewport={"width": 1280, "height": 900},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+                ),
+            )
             page = await context.new_page()
             async def sayfayi_hazirla():
-                await page.goto("https://www.openai.fm", wait_until="networkidle", timeout=60000)
+                cevap = await page.goto("https://www.openai.fm", wait_until="domcontentloaded", timeout=60000)
+                try:
+                    await page.wait_for_selector("textarea", timeout=25000)
+                except Exception:
+                    # Sayfa beklenen yapıda değil (engel / doğrulama ekranı olabilir): teşhis bilgisi ver
+                    try:
+                        govde = (await page.inner_text("body"))[:300].replace("\n", " ")
+                    except Exception:
+                        govde = "(okunamadı)"
+                    durum = cevap.status if cevap else "?"
+                    raise RuntimeError(
+                        f"openai.fm beklenen sayfayı göstermedi. HTTP {durum}, "
+                        f"başlık: '{await page.title()}', içerik: '{govde}'"
+                    )
                 try:
                     await page.get_by_text(ses, exact=True).first.click(timeout=5000)
                 except Exception:
