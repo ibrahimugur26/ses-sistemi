@@ -55,7 +55,7 @@
             position: relative;
             z-index: 10;
             width: 90%;
-            max-width: 600px;
+            max-width: 680px;
             background: rgba(255, 255, 255, 0.05);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
@@ -234,6 +234,32 @@
 
         .hint { font-size: 12px; color: #94a3b8; margin-top: 6px; }
 
+        /* Edge TTS: ses listesi ve kaydırıcılar */
+        .mini-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; margin: 8px 0; }
+        .mini-row select { padding: 10px; font-size: 13px; }
+        .voice-list {
+            max-height: 260px; overflow-y: auto; border-radius: 12px;
+            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .voice-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; }
+        .voice-item:hover { background: rgba(255, 255, 255, 0.05); }
+        .voice-item.sel { background: rgba(139, 92, 246, 0.25); }
+        .voice-item .vname { flex: 1; min-width: 0; font-size: 14px; }
+        .voice-item .vname small { display: block; color: #94a3b8; font-size: 12px; }
+        .voice-item button, .reset-btn, .presets button, .ghost-btn {
+            width: auto; margin: 0; padding: 4px 10px; font-size: 13px; border-radius: 8px;
+            background: rgba(255, 255, 255, 0.08); box-shadow: none;
+        }
+        .voice-item button:hover, .reset-btn:hover, .presets button:hover, .ghost-btn:hover { transform: none; background: rgba(139, 92, 246, 0.35); box-shadow: none; }
+        .voice-item .fav { background: none; font-size: 16px; padding: 0 4px; color: #64748b; }
+        .voice-item .fav.on { color: #fbbf24; }
+        .slider-row { display: grid; grid-template-columns: 50px 1fr 62px 30px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 14px; }
+        .slider-row input[type=range] { padding: 0; accent-color: #8b5cf6; }
+        .slider-row output { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; color: #cbd5e1; }
+        .presets { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 10px; }
+        .ghost-btn { padding: 8px 12px; }
+        audio { width: 100%; margin-top: 10px; }
+
         @media (max-width: 520px) {
             .provider-grid { grid-template-columns: 1fr; }
             .container { padding: 28px 20px; }
@@ -257,10 +283,10 @@
 
         <!-- 1. Adım: Sağlayıcı seçimi -->
         <div id="providerScreen" class="provider-grid">
-            <button type="button" class="provider-card" onclick="selectProvider('microsoft')">
+            <button type="button" class="provider-card" onclick="selectProvider('edge')">
                 <div class="icon">🎙️</div>
-                <h3>Microsoft</h3>
-                <p>Çok dilli, hızlı. Türkçe dahil çok sayıda ses.</p>
+                <h3>Edge TTS</h3>
+                <p>300+ ses, hız/ses/perde ayarı, anında dinleme.</p>
             </button>
             <button type="button" class="provider-card" onclick="selectProvider('openai')">
                 <div class="icon">✨</div>
@@ -300,48 +326,52 @@
             </div>
         </div>
 
-        <div class="form-group" id="microsoftFields">
-            <label for="voice">Ses Seçimi (Diller & Tonlar)</label>
-            <select id="voice">
-                <optgroup label="🇺🇸 İngilizce (ABD) - Tüm Ücretsiz Clipchamp Sesleri (17 Adet)">
-                    <!-- Kadın Sesleri -->
-                    <option value="en-US-AriaNeural">👩🏼 Aria (US / Kadın)</option>
-                    <option value="en-US-JennyNeural">👩🏻 Jenny (US / Kadın)</option>
-                    <option value="en-US-AvaNeural">👩🏼 Ava (US / Kadın)</option>
-                    <option value="en-US-EmmaNeural">👩🏽 Emma (US / Kadın)</option>
-                    <option value="en-US-MichelleNeural">👩🏾 Michelle (US / Kadın)</option>
-                    <option value="en-US-AnaNeural">👧🏼 Ana (US / Çocuk - Kız)</option>
-                    <option value="en-US-AvaMultilingualNeural">🌐 Ava Multilingual (Çok Dilli / Kadın)</option>
-                    <option value="en-US-EmmaMultilingualNeural">🌐 Emma Multilingual (Çok Dilli / Kadın)</option>
-                    
-                    <!-- Erkek Sesleri -->
-                    <option value="en-US-GuyNeural">👨🏼 Guy (US / Erkek)</option>
-                    <option value="en-US-ChristopherNeural">👨🏻 Christopher (US / Erkek)</option>
-                    <option value="en-US-AndrewNeural">👨🏽 Andrew (US / Erkek)</option>
-                    <option value="en-US-BrianNeural">👨🏼‍🦰 Brian (US / Erkek)</option>
-                    <option value="en-US-EricNeural">👨🏿 Eric (US / Erkek)</option>
-                    <option value="en-US-RogerNeural">👨🏽‍🦳 Roger (US / Yaşlı Erkek)</option>
-                    <option value="en-US-SteffanNeural">👨🏻 Steffan (US / Erkek)</option>
-                    <option value="en-US-AndrewMultilingualNeural">🌐 Andrew Multilingual (Çok Dilli / Erkek)</option>
-                    <option value="en-US-BrianMultilingualNeural">🌐 Brian Multilingual (Çok Dilli / Erkek)</option>
-                </optgroup>
-                <optgroup label="🇬🇧 İngilizce (İngiltere) - Premium Sesler">
-                    <option value="en-GB-SoniaNeural">👩🏻 Sonia (UK / Kadın)</option>
-                    <option value="en-GB-LibbyNeural">👩🏻 Libby (UK / Kadın)</option>
-                    <option value="en-GB-RyanNeural">👨🏻 Ryan (UK / Erkek)</option>
-                    <option value="en-GB-ThomasNeural">👨🏻 Thomas (UK / Erkek)</option>
-                </optgroup>
-                <optgroup label="🇦🇺 İngilizce (Avustralya) - Premium Sesler">
-                    <option value="en-AU-NatashaNeural">👩🏼 Natasha (Avustralya / Kadın)</option>
-                    <option value="en-AU-WilliamNeural">👨🏼 William (Avustralya / Erkek)</option>
-                </optgroup>
-                <optgroup label="🇪🇸 İspanyolca - Premium Sesler">
-                    <option value="es-ES-ElviraNeural">👩🏽 Elvira (İspanya / Kadın)</option>
-                    <option value="es-ES-AlvaroNeural">👨🏽 Alvaro (İspanya / Erkek)</option>
-                    <option value="es-MX-DaliaNeural">👩🏽 Dalia (Meksika / Kadın)</option>
-                    <option value="es-MX-JorgeNeural">👨🏽 Jorge (Meksika / Erkek)</option>
-                </optgroup>
-            </select>
+        <!-- Edge TTS ayarları -->
+        <div id="edgeFields">
+            <div class="form-group">
+                <label>Ses Seçimi <span id="vCount" class="hint" style="display:inline"></span></label>
+                <input type="text" id="vSearch" placeholder="Ara: isim, dil, ülke…">
+                <div class="mini-row">
+                    <select id="vLocale"></select>
+                    <select id="vGender">
+                        <option value="">Kadın + Erkek</option>
+                        <option value="Female">Kadın</option>
+                        <option value="Male">Erkek</option>
+                    </select>
+                    <select id="vFav">
+                        <option value="">Hepsi</option>
+                        <option value="1">★ Favoriler</option>
+                    </select>
+                </div>
+                <div id="vList" class="voice-list"><div class="hint" style="padding:12px">Sesler yükleniyor…</div></div>
+                <p class="hint">Seçili: <b id="vCurrent">tr-TR-AhmetNeural</b> — ▶ ile o sesi hızlıca dinleyebilirsiniz.</p>
+            </div>
+
+            <div class="form-group">
+                <label>Ses Ayarları</label>
+                <div class="slider-row"><span>Hız</span><input type="range" id="rate" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
+                <div class="slider-row"><span>Ses</span><input type="range" id="volume" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
+                <div class="slider-row"><span>Perde</span><input type="range" id="pitch" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
+                <div class="presets">
+                    <button type="button" data-p="0,0,0">Normal</button>
+                    <button type="button" data-p="25,0,0">Hızlı</button>
+                    <button type="button" data-p="-25,0,0">Yavaş</button>
+                    <button type="button" data-p="-10,0,-30">Derin</button>
+                    <button type="button" data-p="5,0,30">İnce</button>
+                </div>
+                <button type="button" class="ghost-btn" id="textPreviewBtn">▶ Metnin başını bu ayarlarla dinle</button>
+                <audio id="player" controls class="hidden"></audio>
+            </div>
+
+            <div class="form-group">
+                <label for="altyazi">Altyazı (SRT)</label>
+                <select id="altyazi">
+                    <option value="">Oluşturma</option>
+                    <option value="cumle">Cümle cümle</option>
+                    <option value="kelime">Kelime kelime</option>
+                </select>
+                <p class="hint">Uzun metinler (50-70 bin karakter) ~3.000 karakterlik parçalarla üretilip tek MP3'te birleştirilir; sayfayı kapatmayın.</p>
+            </div>
         </div>
 
         <div class="form-group">
@@ -366,11 +396,12 @@
             currentProvider = provider;
             document.getElementById('providerScreen').classList.add('hidden');
             document.getElementById('studio').classList.remove('hidden');
-            document.getElementById('microsoftFields').classList.toggle('hidden', provider !== 'microsoft');
+            document.getElementById('edgeFields').classList.toggle('hidden', provider !== 'edge');
             document.getElementById('openaiFields').classList.toggle('hidden', provider !== 'openai');
             document.getElementById('subtitle').innerText = provider === 'openai'
                 ? 'OpenAI: metni yazın, ses ve vibe seçin, indirin'
-                : 'Microsoft: metni yazın, sesi seçin ve anında indirin';
+                : 'Edge TTS: metni yazın, sesi seçip dinleyin, ayarlayın ve indirin';
+            if (provider === 'edge') loadVoices();
             if (provider === 'openai' && !document.getElementById('oaVibeText').value) {
                 document.getElementById('oaVibeText').value = OPENAI_VIBELER[document.getElementById('oaVibe').value];
             }
@@ -385,6 +416,122 @@
             hideAlert();
         }
 
+        // ---- Edge TTS: ses listesi, ön dinleme, kaydırıcılar ----
+        const $ = (id) => document.getElementById(id);
+        let allVoices = [];
+        let selectedVoice = localStorage.getItem('edgeVoice') || 'tr-TR-AhmetNeural';
+        let favs = new Set(JSON.parse(localStorage.getItem('edgeFavs') || '[]'));
+        let previewBusy = false;
+
+        const SLIDER_UNIT = { rate: '%', volume: '%', pitch: ' Hz' };
+        ['rate', 'volume', 'pitch'].forEach((id) => {
+            const el = $(id), out = el.parentElement.querySelector('output');
+            const upd = () => { out.textContent = (el.value > 0 ? '+' : '') + el.value + SLIDER_UNIT[id]; localStorage.setItem('edge_' + id, el.value); };
+            const saved = localStorage.getItem('edge_' + id);
+            if (saved !== null) el.value = saved;
+            el.addEventListener('input', upd);
+            el.parentElement.querySelector('.reset-btn').addEventListener('click', () => { el.value = 0; upd(); });
+            upd();
+        });
+        document.querySelectorAll('.presets button').forEach((b) => b.addEventListener('click', () => {
+            const [r, v, p] = b.dataset.p.split(',');
+            $('rate').value = r; $('volume').value = v; $('pitch').value = p;
+            ['rate', 'volume', 'pitch'].forEach((id) => $(id).dispatchEvent(new Event('input')));
+        }));
+
+        function edgeSettings() {
+            return { rate: +$('rate').value, volume: +$('volume').value, pitch: +$('pitch').value };
+        }
+
+        async function playPreview(voice, text, btn) {
+            if (previewBusy) return;
+            previewBusy = true;
+            const old = btn.textContent;
+            btn.textContent = '…';
+            try {
+                const r = await fetch('/api/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ voice, text, ...edgeSettings() })
+                });
+                if (!r.ok) throw new Error((await r.json()).error || 'Ön dinleme alınamadı');
+                const player = $('player');
+                player.src = URL.createObjectURL(await r.blob());
+                player.classList.remove('hidden');
+                player.play();
+            } catch (e) {
+                showAlert(e.message, 'error');
+            } finally {
+                btn.textContent = old;
+                previewBusy = false;
+            }
+        }
+
+        function selectVoice(name) {
+            selectedVoice = name;
+            localStorage.setItem('edgeVoice', name);
+            $('vCurrent').textContent = name;
+            document.querySelectorAll('.voice-item').forEach((d) => d.classList.toggle('sel', d.dataset.v === name));
+        }
+
+        function renderVoices() {
+            const q = $('vSearch').value.toLowerCase(), loc = $('vLocale').value, g = $('vGender').value, fo = $('vFav').value;
+            const list = allVoices.filter((v) => (!loc || v.Locale === loc) && (!g || v.Gender === g) && (!fo || favs.has(v.ShortName)) &&
+                (!q || (v.ShortName + ' ' + v.FriendlyName + ' ' + v.Locale).toLowerCase().includes(q)));
+            $('vCount').textContent = `(${list.length}/${allVoices.length})`;
+            const box = $('vList');
+            box.innerHTML = '';
+            list.forEach((v) => {
+                const d = document.createElement('div');
+                d.className = 'voice-item' + (v.ShortName === selectedVoice ? ' sel' : '');
+                d.dataset.v = v.ShortName;
+                const short = v.ShortName.replace(/^[a-z]{2,3}-[A-Z]{2,4}(-[A-Za-z]+)?-/, '').replace('Neural', '');
+                d.innerHTML = '<button type="button" class="fav"></button><div class="vname"><b></b><small></small></div><button type="button" class="play">▶</button>';
+                d.querySelector('b').textContent = short;
+                d.querySelector('small').textContent = `${v.Locale} · ${v.Gender === 'Female' ? 'Kadın' : 'Erkek'}`;
+                const fav = d.querySelector('.fav');
+                fav.textContent = '★';
+                fav.classList.toggle('on', favs.has(v.ShortName));
+                fav.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    favs.has(v.ShortName) ? favs.delete(v.ShortName) : favs.add(v.ShortName);
+                    localStorage.setItem('edgeFavs', JSON.stringify([...favs]));
+                    fav.classList.toggle('on');
+                });
+                d.querySelector('.play').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectVoice(v.ShortName);
+                    playPreview(v.ShortName, '', e.currentTarget);
+                });
+                d.addEventListener('click', () => selectVoice(v.ShortName));
+                box.appendChild(d);
+            });
+            if (!list.length) box.innerHTML = '<div class="hint" style="padding:12px">Eşleşen ses yok.</div>';
+        }
+
+        async function loadVoices() {
+            if (allVoices.length) return;
+            try {
+                const r = await fetch('/api/voices');
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.error);
+                const tr = (l) => (l.startsWith('tr') ? 0 : 1);
+                allVoices = data.sort((a, b) => tr(a.Locale) - tr(b.Locale) || a.Locale.localeCompare(b.Locale) || a.ShortName.localeCompare(b.ShortName));
+                const locs = [...new Set(allVoices.map((v) => v.Locale))];
+                $('vLocale').innerHTML = '<option value="">Tüm diller</option>' + locs.map((l) => `<option>${l}</option>`).join('');
+                $('vCurrent').textContent = selectedVoice;
+                renderVoices();
+            } catch (e) {
+                $('vList').innerHTML = '<div class="hint" style="padding:12px">Ses listesi alınamadı: ' + (e.message || '') + '</div>';
+            }
+        }
+        ['vSearch', 'vLocale', 'vGender', 'vFav'].forEach((id) => $(id).addEventListener('input', renderVoices));
+        $('textPreviewBtn').addEventListener('click', (e) => {
+            const t = $('text').value.trim();
+            if (!t) return showAlert('Önce bir metin girin.', 'error');
+            playPreview(selectedVoice, t.slice(0, 300), e.currentTarget);
+        });
+
         function hideAlert() {
             document.getElementById('statusAlert').style.display = 'none';
         }
@@ -395,10 +542,10 @@
 
         async function generateAudio() {
             const text = document.getElementById('text').value;
-            const provider = currentProvider || 'microsoft';
+            const provider = currentProvider || 'edge';
             const voice = provider === 'openai'
                 ? document.getElementById('oaVoice').value
-                : document.getElementById('voice').value;
+                : selectedVoice;
             const vibe = provider === 'openai' ? document.getElementById('oaVibeText').value : '';
             const btn = document.getElementById('generateBtn');
             const btnText = document.getElementById('btnText');
@@ -421,7 +568,7 @@
                 const response = await fetch('/generate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, voice, provider, vibe })
+                    body: JSON.stringify({ text, voice, provider, vibe, ...edgeSettings(), altyazi: document.getElementById('altyazi').value })
                 });
 
                 const data = await response.json();
@@ -474,7 +621,15 @@
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
-                        
+
+                        if (data.srt_url) {
+                            const s = document.createElement('a');
+                            s.href = customName ? `${data.srt_url}?name=${encodeURIComponent(customName.replace(/\.mp3$/i, ''))}` : data.srt_url;
+                            s.download = '';
+                            document.body.appendChild(s);
+                            setTimeout(() => { s.click(); document.body.removeChild(s); }, 600);
+                        }
+
                         resetButton();
                     } else if (data.status === 'failed') {
                         clearInterval(interval);
