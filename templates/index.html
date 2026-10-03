@@ -1,671 +1,393 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yapay Zeka Ses Stüdyosu</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yapay Zeka Ses Stüdyosu</title>
+<style>
+:root{--bg:#0f1218;--card:#181d27;--line:#262d3b;--txt:#e8ecf3;--mut:#8b95a8;--acc:#4f8cff;--ok:#38c98a;--err:#ff6b6b}
+@media(prefers-color-scheme:light){:root{--bg:#f3f5f9;--card:#fff;--line:#dde2ec;--txt:#1b2130;--mut:#667089}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.45 system-ui,Segoe UI,sans-serif}
+.wrap{display:grid;grid-template-columns:380px 1fr;gap:16px;max-width:1200px;margin:0 auto;padding:16px;height:100vh}
+@media(max-width:800px){.wrap{grid-template-columns:1fr;height:auto}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;min-height:0}
+h1{font-size:16px;margin:0 0 10px}
+label.l{display:block;font-weight:600;margin:10px 0 4px}
+input,select,textarea,button{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+input[type=range]{padding:0;accent-color:var(--acc)}
+button{cursor:pointer}button:hover{border-color:var(--acc)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+button:disabled{opacity:.5;cursor:wait}
+.row{display:flex;gap:8px;margin-bottom:8px}.row>*{flex:1;min-width:0}
+.mut,.hint{color:var(--mut)}.hint{font-size:12px;margin:6px 0 0}
+.hidden{display:none!important}
 
-        body {
-            background: linear-gradient(135deg, #0f172a, #1e1b4b);
-            color: #ffffff;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
-            padding: 24px 0;
-        }
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tabs button{flex:1;font-weight:600}
+.tabs button.on{background:var(--acc);border-color:var(--acc);color:#fff}
 
-        /* Arka plan parlama efektleri (Neon Lights) */
-        .circle-1 {
-            position: absolute;
-            width: 400px;
-            height: 400px;
-            background: radial-gradient(circle, #8b5cf6 0%, rgba(139, 92, 246, 0) 70%);
-            top: -100px;
-            left: -100px;
-            border-radius: 50%;
-            opacity: 0.5;
-            z-index: 1;
-        }
-        
-        .circle-2 {
-            position: absolute;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, #3b82f6 0%, rgba(59, 130, 246, 0) 70%);
-            bottom: -200px;
-            right: -200px;
-            border-radius: 50%;
-            opacity: 0.4;
-            z-index: 1;
-        }
+#vList,.oa-list{overflow:auto;flex:1;min-height:200px;max-height:70vh;margin-top:4px}
+.v{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;cursor:pointer}
+.v:hover{background:var(--bg)}
+.v.sel{background:color-mix(in srgb,var(--acc) 18%,transparent);outline:1px solid var(--acc)}
+.v .n{flex:1;min-width:0}.v b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.v small{color:var(--mut)}
+.ic{padding:3px 8px;flex:none}
+.fav{background:none;border:0;font-size:16px;padding:0 4px;flex:none;color:var(--mut)}.fav.on{color:#f5b301}
 
-        /* Glassmorphism Panel */
-        .container {
-            position: relative;
-            z-index: 10;
-            width: 90%;
-            max-width: 680px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 28px;
-            margin-bottom: 8px;
-            background: linear-gradient(to right, #a78bfa, #60a5fa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p.subtitle {
-            text-align: center;
-            color: #94a3b8;
-            font-size: 14px;
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #cbd5e1;
-            font-weight: 600;
-        }
-
-        textarea, select, input {
-            width: 100%;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 15px;
-            color: #fff;
-            font-size: 15px;
-            outline: none;
-            transition: all 0.3s ease;
-        }
-
-        textarea:focus, select:focus, input:focus {
-            border-color: #8b5cf6;
-            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
-        }
-
-        textarea {
-            height: 150px;
-            resize: none;
-        }
-
-        /* İndirme Butonu */
-        button {
-            width: 100%;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 16px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin-top: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(139, 92, 246, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Yükleniyor Animasyonu */
-        .spinner {
-            display: none;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Uyarı Mesajları */
-        .alert {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            display: none;
-            font-size: 14px;
-        }
-
-        .alert.error {
-            background: rgba(239, 68, 68, 0.2);
-            border: 1px solid rgba(239, 68, 68, 0.4);
-            color: #fca5a5;
-        }
-
-        .alert.success {
-            background: rgba(34, 197, 94, 0.2);
-            border: 1px solid rgba(34, 197, 94, 0.4);
-            color: #86efac;
-        }
-        
-        /* Sağlayıcı seçim ekranı */
-        .provider-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-        }
-
-        .provider-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 24px 16px;
-            text-align: center;
-            cursor: pointer;
-            color: #fff;
-            display: block;
-            transition: all 0.3s ease;
-        }
-
-        .provider-card:hover {
-            border-color: #8b5cf6;
-            box-shadow: 0 0 20px rgba(139, 92, 246, 0.35);
-            transform: translateY(-3px);
-        }
-
-        .provider-card .icon { font-size: 36px; margin-bottom: 10px; }
-        .provider-card h3 { font-size: 18px; margin-bottom: 6px; }
-        .provider-card p { font-size: 13px; color: #94a3b8; }
-
-        .back-link {
-            background: none;
-            border: none;
-            box-shadow: none;
-            width: auto;
-            padding: 0;
-            margin: 0 0 16px 0;
-            color: #a78bfa;
-            font-size: 14px;
-            font-weight: 600;
-            justify-content: flex-start;
-        }
-
-        .back-link:hover { transform: none; box-shadow: none; text-decoration: underline; }
-
-        .hidden { display: none !important; }
-
-        .hint { font-size: 12px; color: #94a3b8; margin-top: 6px; }
-
-        /* Edge TTS: ses listesi ve kaydırıcılar */
-        .mini-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 8px; margin: 8px 0; }
-        .mini-row select { padding: 10px; font-size: 13px; }
-        .voice-list {
-            max-height: 260px; overflow-y: auto; border-radius: 12px;
-            background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .voice-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; }
-        .voice-item:hover { background: rgba(255, 255, 255, 0.05); }
-        .voice-item.sel { background: rgba(139, 92, 246, 0.25); }
-        .voice-item .vname { flex: 1; min-width: 0; font-size: 14px; }
-        .voice-item .vname small { display: block; color: #94a3b8; font-size: 12px; }
-        .voice-item button, .reset-btn, .presets button, .ghost-btn {
-            width: auto; margin: 0; padding: 4px 10px; font-size: 13px; border-radius: 8px;
-            background: rgba(255, 255, 255, 0.08); box-shadow: none;
-        }
-        .voice-item button:hover, .reset-btn:hover, .presets button:hover, .ghost-btn:hover { transform: none; background: rgba(139, 92, 246, 0.35); box-shadow: none; }
-        .voice-item .fav { background: none; font-size: 16px; padding: 0 4px; color: #64748b; }
-        .voice-item .fav.on { color: #fbbf24; }
-        .slider-row { display: grid; grid-template-columns: 50px 1fr 62px 30px; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 14px; }
-        .slider-row input[type=range] { padding: 0; accent-color: #8b5cf6; }
-        .slider-row output { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; color: #cbd5e1; }
-        .presets { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 10px; }
-        .ghost-btn { padding: 8px 12px; }
-        audio { width: 100%; margin-top: 10px; }
-
-        @media (max-width: 520px) {
-            .provider-grid { grid-template-columns: 1fr; }
-            .container { padding: 28px 20px; }
-        }
-
-        /* Select elementinin içi */
-        select option {
-            background: #1e293b;
-            color: #fff;
-        }
-    </style>
+.ctl{display:grid;grid-template-columns:70px 1fr 64px 28px;gap:8px;align-items:center;margin:6px 0}
+.ctl output{text-align:right;font-variant-numeric:tabular-nums}
+.ctl button{padding:2px 0}
+.presets{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:6px 0 8px}
+.presets button{padding:3px 8px;font-size:12px}
+textarea{width:100%;min-height:150px;resize:vertical}
+#text{min-height:200px}
+.bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+audio{width:100%;margin-top:12px}
+.alert{margin-top:10px;padding:10px 12px;border-radius:8px;display:none;border:1px solid var(--line)}
+.alert.error{color:var(--err);border-color:var(--err)}
+.alert.success{color:var(--ok);border-color:var(--ok)}
+.spinner{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.studio-scroll{overflow:auto}
+</style>
 </head>
 <body>
-
-    <div class="circle-1"></div>
-    <div class="circle-2"></div>
-
-    <div class="container">
-        <h1>Yapay Zeka Ses Stüdyosu</h1>
-        <p class="subtitle" id="subtitle">Önce kullanmak istediğiniz ses motorunu seçin</p>
-
-        <!-- 1. Adım: Sağlayıcı seçimi -->
-        <div id="providerScreen" class="provider-grid">
-            <button type="button" class="provider-card" onclick="selectProvider('edge')">
-                <div class="icon">🎙️</div>
-                <h3>Edge TTS</h3>
-                <p>300+ ses, hız/ses/perde ayarı, anında dinleme.</p>
-            </button>
-            <button type="button" class="provider-card" onclick="selectProvider('openai')">
-                <div class="icon">✨</div>
-                <h3>OpenAI</h3>
-                <p>Doğal tonlar. Ses ve vibe (üslup) seçilebilir.</p>
-            </button>
-        </div>
-
-        <!-- 2. Adım: Seçilen sağlayıcının formu -->
-        <div id="studio" class="hidden">
-        <button type="button" class="back-link" onclick="backToProviders()">← Ses motorunu değiştir</button>
-
-        <div class="form-group">
-            <label for="text">Metin</label>
-            <textarea id="text" placeholder="Sese dönüştürmek istediğiniz metni buraya yazın veya yapıştırın..."></textarea>
-        </div>
-
-        <!-- OpenAI ayarları -->
-        <div id="openaiFields" class="hidden">
-            <div class="form-group">
-                <label for="oaVoice">Ses Seçimi (OpenAI)</label>
-                <select id="oaVoice">
-                    {% for s in openai_sesler %}
-                    <option value="{{ s }}" {% if s == 'Fable' %}selected{% endif %}>{{ s }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="oaVibe">Vibe (Üslup)</label>
-                <select id="oaVibe">
-                    {% for v in openai_vibeler %}
-                    <option value="{{ v }}">{{ v }}</option>
-                    {% endfor %}
-                </select>
-                <textarea id="oaVibeText" style="height:100px; margin-top:10px;"></textarea>
-                <p class="hint">Üslup talimatı İngilizce yazılır, istediğiniz gibi düzenleyebilirsiniz. Uzun metinler (60-70 bin karakter) parça parça üretilir, birkaç dakika sürebilir; sayfayı kapatmayın.</p>
-            </div>
-        </div>
-
-        <!-- Edge TTS ayarları -->
-        <div id="edgeFields">
-            <div class="form-group">
-                <label>Ses Seçimi <span id="vCount" class="hint" style="display:inline"></span></label>
-                <input type="text" id="vSearch" placeholder="Ara: isim, dil, ülke…">
-                <div class="mini-row">
-                    <select id="vLocale"></select>
-                    <select id="vGender">
-                        <option value="">Kadın + Erkek</option>
-                        <option value="Female">Kadın</option>
-                        <option value="Male">Erkek</option>
-                    </select>
-                    <select id="vFav">
-                        <option value="">Hepsi</option>
-                        <option value="1">★ Favoriler</option>
-                    </select>
-                </div>
-                <div id="vList" class="voice-list"><div class="hint" style="padding:12px">Sesler yükleniyor…</div></div>
-                <p class="hint">Seçili: <b id="vCurrent">tr-TR-AhmetNeural</b> — ▶ ile o sesi hızlıca dinleyebilirsiniz.</p>
-            </div>
-
-            <div class="form-group">
-                <label>Ses Ayarları</label>
-                <div class="slider-row"><span>Hız</span><input type="range" id="rate" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
-                <div class="slider-row"><span>Ses</span><input type="range" id="volume" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
-                <div class="slider-row"><span>Perde</span><input type="range" id="pitch" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
-                <div class="presets">
-                    <button type="button" data-p="0,0,0">Normal</button>
-                    <button type="button" data-p="25,0,0">Hızlı</button>
-                    <button type="button" data-p="-25,0,0">Yavaş</button>
-                    <button type="button" data-p="-10,0,-30">Derin</button>
-                    <button type="button" data-p="5,0,30">İnce</button>
-                </div>
-                <button type="button" class="ghost-btn" id="textPreviewBtn">▶ Metnin başını bu ayarlarla dinle</button>
-                <audio id="player" controls class="hidden"></audio>
-            </div>
-
-            <div class="form-group">
-                <label for="altyazi">Altyazı (SRT)</label>
-                <select id="altyazi">
-                    <option value="">Oluşturma</option>
-                    <option value="cumle">Cümle cümle</option>
-                    <option value="kelime">Kelime kelime</option>
-                </select>
-                <p class="hint">Uzun metinler (50-70 bin karakter) ~3.000 karakterlik parçalarla üretilip tek MP3'te birleştirilir; sayfayı kapatmayın.</p>
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label for="filename">Dosya Adı (İsteğe Bağlı)</label>
-            <input type="text" id="filename" placeholder="Örn: ses-kaydi (Boş bırakılırsa rastgele isimlendirilir)">
-        </div>
-
-        <button id="generateBtn" onclick="generateAudio()">
-            <span id="btnText">Oluştur ve İndir 📥</span>
-            <div class="spinner" id="spinner"></div>
-        </button>
-
-        <div id="statusAlert" class="alert"></div>
-        </div><!-- /studio -->
+<div class="wrap">
+  <!-- Sol: motor + ses seçimi -->
+  <section class="card">
+    <div class="tabs">
+      <button type="button" id="tabEdge" class="on" onclick="selectProvider('edge')">🎙️ Edge TTS</button>
+      <button type="button" id="tabOpenai" onclick="selectProvider('openai')">✨ OpenAI</button>
     </div>
 
-    <script>
-        const OPENAI_VIBELER = {{ openai_vibeler | tojson }};
-        let currentProvider = null;
+    <div id="edgeFields" style="display:flex;flex-direction:column;min-height:0;flex:1">
+      <h1>Sesler <span id="vCount" class="mut"></span></h1>
+      <div class="row"><input type="text" id="vSearch" placeholder="Ara: isim, dil, ülke…"></div>
+      <div class="row">
+        <select id="vLocale"></select>
+        <select id="vGender"><option value="">Tümü</option><option value="Female">Kadın</option><option value="Male">Erkek</option></select>
+        <select id="vFav"><option value="">Hepsi</option><option value="1">★ Favoriler</option></select>
+      </div>
+      <div id="vList"><div class="hint" style="padding:12px">Sesler yükleniyor…</div></div>
+    </div>
 
-        function selectProvider(provider) {
-            currentProvider = provider;
-            document.getElementById('providerScreen').classList.add('hidden');
-            document.getElementById('studio').classList.remove('hidden');
-            document.getElementById('edgeFields').classList.toggle('hidden', provider !== 'edge');
-            document.getElementById('openaiFields').classList.toggle('hidden', provider !== 'openai');
-            document.getElementById('subtitle').innerText = provider === 'openai'
-                ? 'OpenAI: metni yazın, ses ve vibe seçin, indirin'
-                : 'Edge TTS: metni yazın, sesi seçip dinleyin, ayarlayın ve indirin';
-            if (provider === 'edge') loadVoices();
-            if (provider === 'openai' && !document.getElementById('oaVibeText').value) {
-                document.getElementById('oaVibeText').value = OPENAI_VIBELER[document.getElementById('oaVibe').value];
-            }
-            hideAlert();
-        }
+    <div id="openaiFields" class="hidden" style="flex-direction:column;min-height:0;flex:1;overflow:auto">
+      <h1>OpenAI Sesleri</h1>
+      <div class="oa-list" id="oaList">
+        {% for s in openai_sesler %}
+        <div class="v{% if s == 'Fable' %} sel{% endif %}" data-oa="{{ s }}"><div class="n"><b>{{ s }}</b></div></div>
+        {% endfor %}
+      </div>
+      <label class="l" for="oaVibe">Vibe (Üslup)</label>
+      <select id="oaVibe">
+        {% for v in openai_vibeler %}
+        <option value="{{ v }}">{{ v }}</option>
+        {% endfor %}
+      </select>
+      <textarea id="oaVibeText" style="min-height:100px;margin-top:8px"></textarea>
+      <p class="hint">Üslup talimatı İngilizce yazılır, istediğiniz gibi düzenleyebilirsiniz.</p>
+    </div>
+  </section>
 
-        function backToProviders() {
-            currentProvider = null;
-            document.getElementById('studio').classList.add('hidden');
-            document.getElementById('providerScreen').classList.remove('hidden');
-            document.getElementById('subtitle').innerText = 'Önce kullanmak istediğiniz ses motorunu seçin';
-            hideAlert();
-        }
+  <!-- Sağ: stüdyo -->
+  <section class="card studio-scroll">
+    <h1>Stüdyo — <span id="cur" class="mut">tr-TR-AhmetNeural</span></h1>
 
-        // ---- Edge TTS: ses listesi, ön dinleme, kaydırıcılar ----
-        const $ = (id) => document.getElementById(id);
-        let allVoices = [];
-        let selectedVoice = localStorage.getItem('edgeVoice') || 'tr-TR-AhmetNeural';
-        let favs = new Set(JSON.parse(localStorage.getItem('edgeFavs') || '[]'));
-        let previewBusy = false;
+    <div id="edgeSettings">
+      <div class="ctl"><label>Hız</label><input id="rate" type="range" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
+      <div class="ctl"><label>Ses</label><input id="volume" type="range" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
+      <div class="ctl"><label>Perde</label><input id="pitch" type="range" min="-100" max="100" value="0"><output></output><button type="button" class="reset-btn" title="Sıfırla">↺</button></div>
+      <div class="presets">
+        <span class="mut">Hazır:</span>
+        <button type="button" data-p="0,0,0">Normal</button>
+        <button type="button" data-p="25,0,0">Hızlı</button>
+        <button type="button" data-p="-25,0,0">Yavaş</button>
+        <button type="button" data-p="-10,0,-30">Derin</button>
+        <button type="button" data-p="5,0,30">İnce</button>
+        <button type="button" id="textPreviewBtn">▶ Metnin başını dinle</button>
+      </div>
+    </div>
 
-        const SLIDER_UNIT = { rate: '%', volume: '%', pitch: ' Hz' };
-        ['rate', 'volume', 'pitch'].forEach((id) => {
-            const el = $(id), out = el.parentElement.querySelector('output');
-            const upd = () => { out.textContent = (el.value > 0 ? '+' : '') + el.value + SLIDER_UNIT[id]; localStorage.setItem('edge_' + id, el.value); };
-            const saved = localStorage.getItem('edge_' + id);
-            if (saved !== null) el.value = saved;
-            el.addEventListener('input', upd);
-            el.parentElement.querySelector('.reset-btn').addEventListener('click', () => { el.value = 0; upd(); });
-            upd();
+    <textarea id="text" placeholder="Sese dönüştürmek istediğiniz metni buraya yazın veya yapıştırın..."></textarea>
+    <div class="bar">
+      <input type="text" id="filename" style="flex:1;min-width:160px" placeholder="Dosya adı (isteğe bağlı)">
+      <select id="altyazi" title="Altyazı (SRT)">
+        <option value="">Altyazı yok</option>
+        <option value="cumle">Altyazı: cümle</option>
+        <option value="kelime">Altyazı: kelime</option>
+      </select>
+      <span class="mut" id="chars"></span>
+    </div>
+    <p class="hint" id="longHint">Uzun metinler (50-70 bin karakter) parça parça üretilip tek MP3'te birleştirilir; sayfayı kapatmayın.</p>
+    <div class="bar">
+      <button id="generateBtn" class="pri" onclick="generateAudio()">
+        <span id="btnText">▶ Oluştur ve İndir</span>
+        <span class="spinner" id="spinner"></span>
+      </button>
+    </div>
+    <div id="statusAlert" class="alert"></div>
+    <audio id="player" controls class="hidden"></audio>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const OPENAI_VIBELER = {{ openai_vibeler | tojson }};
+let currentProvider = 'edge';
+let oaVoice = 'Fable';
+let allVoices = [];
+let selectedVoice = localStorage.getItem('edgeVoice') || 'tr-TR-AhmetNeural';
+let favs = new Set(JSON.parse(localStorage.getItem('edgeFavs') || '[]'));
+let previewBusy = false;
+
+function selectProvider(provider) {
+    currentProvider = provider;
+    $('tabEdge').classList.toggle('on', provider === 'edge');
+    $('tabOpenai').classList.toggle('on', provider === 'openai');
+    $('edgeFields').classList.toggle('hidden', provider !== 'edge');
+    $('openaiFields').classList.toggle('hidden', provider !== 'openai');
+    $('openaiFields').style.display = provider === 'openai' ? 'flex' : '';
+    $('edgeSettings').classList.toggle('hidden', provider !== 'edge');
+    $('altyazi').classList.toggle('hidden', provider !== 'edge');
+    $('cur').textContent = provider === 'edge' ? selectedVoice : oaVoice;
+    if (provider === 'openai' && !$('oaVibeText').value) {
+        $('oaVibeText').value = OPENAI_VIBELER[$('oaVibe').value];
+    }
+    if (provider === 'edge') loadVoices();
+    hideAlert();
+}
+
+$('oaVibe').addEventListener('change', (e) => { $('oaVibeText').value = OPENAI_VIBELER[e.target.value]; });
+document.querySelectorAll('[data-oa]').forEach((d) => d.addEventListener('click', () => {
+    oaVoice = d.dataset.oa;
+    document.querySelectorAll('[data-oa]').forEach((x) => x.classList.toggle('sel', x === d));
+    $('cur').textContent = oaVoice;
+}));
+
+$('text').addEventListener('input', () => { $('chars').textContent = $('text').value.length + ' karakter'; });
+
+// ---- Edge TTS: kaydırıcılar ----
+const SLIDER_UNIT = { rate: '%', volume: '%', pitch: ' Hz' };
+['rate', 'volume', 'pitch'].forEach((id) => {
+    const el = $(id), out = el.parentElement.querySelector('output');
+    const upd = () => { out.textContent = (el.value > 0 ? '+' : '') + el.value + SLIDER_UNIT[id]; localStorage.setItem('edge_' + id, el.value); };
+    const saved = localStorage.getItem('edge_' + id);
+    if (saved !== null) el.value = saved;
+    el.addEventListener('input', upd);
+    el.parentElement.querySelector('.reset-btn').addEventListener('click', () => { el.value = 0; upd(); });
+    upd();
+});
+document.querySelectorAll('.presets button[data-p]').forEach((b) => b.addEventListener('click', () => {
+    const [r, v, p] = b.dataset.p.split(',');
+    $('rate').value = r; $('volume').value = v; $('pitch').value = p;
+    ['rate', 'volume', 'pitch'].forEach((id) => $(id).dispatchEvent(new Event('input')));
+}));
+
+function edgeSettings() {
+    return { rate: +$('rate').value, volume: +$('volume').value, pitch: +$('pitch').value };
+}
+
+// ---- Edge TTS: ön dinleme ve ses listesi ----
+async function playPreview(voice, text, btn) {
+    if (previewBusy) return;
+    previewBusy = true;
+    const old = btn.textContent;
+    btn.textContent = '…';
+    try {
+        const r = await fetch('/api/preview', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ voice, text, ...edgeSettings() })
         });
-        document.querySelectorAll('.presets button').forEach((b) => b.addEventListener('click', () => {
-            const [r, v, p] = b.dataset.p.split(',');
-            $('rate').value = r; $('volume').value = v; $('pitch').value = p;
-            ['rate', 'volume', 'pitch'].forEach((id) => $(id).dispatchEvent(new Event('input')));
-        }));
+        if (!r.ok) throw new Error((await r.json()).error || 'Ön dinleme alınamadı');
+        const player = $('player');
+        player.src = URL.createObjectURL(await r.blob());
+        player.classList.remove('hidden');
+        player.play();
+    } catch (e) {
+        showAlert(e.message, 'error');
+    } finally {
+        btn.textContent = old;
+        previewBusy = false;
+    }
+}
 
-        function edgeSettings() {
-            return { rate: +$('rate').value, volume: +$('volume').value, pitch: +$('pitch').value };
-        }
+function selectVoice(name) {
+    selectedVoice = name;
+    localStorage.setItem('edgeVoice', name);
+    $('cur').textContent = name;
+    document.querySelectorAll('#vList .v').forEach((d) => d.classList.toggle('sel', d.dataset.v === name));
+}
 
-        async function playPreview(voice, text, btn) {
-            if (previewBusy) return;
-            previewBusy = true;
-            const old = btn.textContent;
-            btn.textContent = '…';
-            try {
-                const r = await fetch('/api/preview', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ voice, text, ...edgeSettings() })
-                });
-                if (!r.ok) throw new Error((await r.json()).error || 'Ön dinleme alınamadı');
-                const player = $('player');
-                player.src = URL.createObjectURL(await r.blob());
-                player.classList.remove('hidden');
-                player.play();
-            } catch (e) {
-                showAlert(e.message, 'error');
-            } finally {
-                btn.textContent = old;
-                previewBusy = false;
-            }
-        }
-
-        function selectVoice(name) {
-            selectedVoice = name;
-            localStorage.setItem('edgeVoice', name);
-            $('vCurrent').textContent = name;
-            document.querySelectorAll('.voice-item').forEach((d) => d.classList.toggle('sel', d.dataset.v === name));
-        }
-
-        function renderVoices() {
-            const q = $('vSearch').value.toLowerCase(), loc = $('vLocale').value, g = $('vGender').value, fo = $('vFav').value;
-            const list = allVoices.filter((v) => (!loc || v.Locale === loc) && (!g || v.Gender === g) && (!fo || favs.has(v.ShortName)) &&
-                (!q || (v.ShortName + ' ' + v.FriendlyName + ' ' + v.Locale).toLowerCase().includes(q)));
-            $('vCount').textContent = `(${list.length}/${allVoices.length})`;
-            const box = $('vList');
-            box.innerHTML = '';
-            list.forEach((v) => {
-                const d = document.createElement('div');
-                d.className = 'voice-item' + (v.ShortName === selectedVoice ? ' sel' : '');
-                d.dataset.v = v.ShortName;
-                const short = v.ShortName.replace(/^[a-z]{2,3}-[A-Z]{2,4}(-[A-Za-z]+)?-/, '').replace('Neural', '');
-                d.innerHTML = '<button type="button" class="fav"></button><div class="vname"><b></b><small></small></div><button type="button" class="play">▶</button>';
-                d.querySelector('b').textContent = short;
-                d.querySelector('small').textContent = `${v.Locale} · ${v.Gender === 'Female' ? 'Kadın' : 'Erkek'}`;
-                const fav = d.querySelector('.fav');
-                fav.textContent = '★';
-                fav.classList.toggle('on', favs.has(v.ShortName));
-                fav.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    favs.has(v.ShortName) ? favs.delete(v.ShortName) : favs.add(v.ShortName);
-                    localStorage.setItem('edgeFavs', JSON.stringify([...favs]));
-                    fav.classList.toggle('on');
-                });
-                d.querySelector('.play').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectVoice(v.ShortName);
-                    playPreview(v.ShortName, '', e.currentTarget);
-                });
-                d.addEventListener('click', () => selectVoice(v.ShortName));
-                box.appendChild(d);
-            });
-            if (!list.length) box.innerHTML = '<div class="hint" style="padding:12px">Eşleşen ses yok.</div>';
-        }
-
-        async function loadVoices() {
-            if (allVoices.length) return;
-            try {
-                const r = await fetch('/api/voices');
-                const data = await r.json();
-                if (!r.ok) throw new Error(data.error);
-                const tr = (l) => (l.startsWith('tr') ? 0 : 1);
-                allVoices = data.sort((a, b) => tr(a.Locale) - tr(b.Locale) || a.Locale.localeCompare(b.Locale) || a.ShortName.localeCompare(b.ShortName));
-                const locs = [...new Set(allVoices.map((v) => v.Locale))];
-                $('vLocale').innerHTML = '<option value="">Tüm diller</option>' + locs.map((l) => `<option>${l}</option>`).join('');
-                $('vCurrent').textContent = selectedVoice;
-                renderVoices();
-            } catch (e) {
-                $('vList').innerHTML = '<div class="hint" style="padding:12px">Ses listesi alınamadı: ' + (e.message || '') + '</div>';
-            }
-        }
-        ['vSearch', 'vLocale', 'vGender', 'vFav'].forEach((id) => $(id).addEventListener('input', renderVoices));
-        $('textPreviewBtn').addEventListener('click', (e) => {
-            const t = $('text').value.trim();
-            if (!t) return showAlert('Önce bir metin girin.', 'error');
-            playPreview(selectedVoice, t.slice(0, 300), e.currentTarget);
+function renderVoices() {
+    const q = $('vSearch').value.toLowerCase(), loc = $('vLocale').value, g = $('vGender').value, fo = $('vFav').value;
+    const list = allVoices.filter((v) => (!loc || v.Locale === loc) && (!g || v.Gender === g) && (!fo || favs.has(v.ShortName)) &&
+        (!q || (v.ShortName + ' ' + v.FriendlyName + ' ' + v.Locale).toLowerCase().includes(q)));
+    $('vCount').textContent = `(${list.length}/${allVoices.length})`;
+    const box = $('vList');
+    box.innerHTML = '';
+    list.forEach((v) => {
+        const d = document.createElement('div');
+        d.className = 'v' + (v.ShortName === selectedVoice ? ' sel' : '');
+        d.dataset.v = v.ShortName;
+        const short = v.ShortName.replace(/^[a-z]{2,3}-[A-Z]{2,4}(-[A-Za-z]+)?-/, '').replace('Neural', '');
+        d.innerHTML = '<button type="button" class="fav">★</button><div class="n"><b></b><small></small></div><button type="button" class="ic">▶</button>';
+        d.querySelector('b').textContent = short;
+        d.querySelector('small').textContent = `${v.Locale} · ${v.Gender === 'Female' ? 'Kadın' : 'Erkek'}`;
+        const fav = d.querySelector('.fav');
+        fav.classList.toggle('on', favs.has(v.ShortName));
+        fav.addEventListener('click', (e) => {
+            e.stopPropagation();
+            favs.has(v.ShortName) ? favs.delete(v.ShortName) : favs.add(v.ShortName);
+            localStorage.setItem('edgeFavs', JSON.stringify([...favs]));
+            fav.classList.toggle('on');
         });
-
-        function hideAlert() {
-            document.getElementById('statusAlert').style.display = 'none';
-        }
-
-        document.getElementById('oaVibe').addEventListener('change', (e) => {
-            document.getElementById('oaVibeText').value = OPENAI_VIBELER[e.target.value];
+        d.querySelector('.ic').addEventListener('click', (e) => {
+            e.stopPropagation();
+            selectVoice(v.ShortName);
+            playPreview(v.ShortName, '', e.currentTarget);
         });
+        d.addEventListener('click', () => selectVoice(v.ShortName));
+        box.appendChild(d);
+    });
+    if (!list.length) box.innerHTML = '<div class="hint" style="padding:12px">Eşleşen ses yok.</div>';
+}
 
-        async function generateAudio() {
-            const text = document.getElementById('text').value;
-            const provider = currentProvider || 'edge';
-            const voice = provider === 'openai'
-                ? document.getElementById('oaVoice').value
-                : selectedVoice;
-            const vibe = provider === 'openai' ? document.getElementById('oaVibeText').value : '';
-            const btn = document.getElementById('generateBtn');
-            const btnText = document.getElementById('btnText');
-            const spinner = document.getElementById('spinner');
-            const alertBox = document.getElementById('statusAlert');
+async function loadVoices() {
+    if (allVoices.length) return;
+    try {
+        const r = await fetch('/api/voices');
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error);
+        const tr = (l) => (l.startsWith('tr') ? 0 : 1);
+        allVoices = data.sort((a, b) => tr(a.Locale) - tr(b.Locale) || a.Locale.localeCompare(b.Locale) || a.ShortName.localeCompare(b.ShortName));
+        const locs = [...new Set(allVoices.map((v) => v.Locale))];
+        $('vLocale').innerHTML = '<option value="">Tüm diller</option>' + locs.map((l) => `<option>${l}</option>`).join('');
+        renderVoices();
+    } catch (e) {
+        $('vList').innerHTML = '<div class="hint" style="padding:12px">Ses listesi alınamadı: ' + (e.message || '') + '</div>';
+    }
+}
+['vSearch', 'vLocale', 'vGender', 'vFav'].forEach((id) => $(id).addEventListener('input', renderVoices));
+$('textPreviewBtn').addEventListener('click', (e) => {
+    const t = $('text').value.trim();
+    if (!t) return showAlert('Önce bir metin girin.', 'error');
+    playPreview(selectedVoice, t.slice(0, 300), e.currentTarget);
+});
 
-            if (!text.trim()) {
-                showAlert('Lütfen boş bırakmayın, bir metin girin!', 'error');
+// ---- Üretim ----
+function hideAlert() { $('statusAlert').style.display = 'none'; }
+
+async function generateAudio() {
+    const text = $('text').value;
+    const provider = currentProvider;
+    const voice = provider === 'openai' ? oaVoice : selectedVoice;
+    const vibe = provider === 'openai' ? $('oaVibeText').value : '';
+    const btn = $('generateBtn');
+
+    if (!text.trim()) {
+        showAlert('Lütfen boş bırakmayın, bir metin girin!', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    $('btnText').innerText = "Kuyruğa Alınıyor...";
+    $('spinner').style.display = "inline-block";
+    hideAlert();
+
+    try {
+        const response = await fetch('/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, voice, provider, vibe, ...edgeSettings(), altyazi: $('altyazi').value })
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success && data.task_id) {
+            showAlert('İşlem sıraya alındı. Ses dosyası hazırlanıyor, lütfen bekleyin...', 'success');
+            pollTaskStatus(data.task_id);
+        } else {
+            showAlert(data.error || 'Bir hata oluştu.', 'error');
+            resetButton();
+        }
+    } catch (error) {
+        showAlert('Sunucuya bağlanılamadı. Lütfen sunucunun çalıştığından emin olun.', 'error');
+        resetButton();
+    }
+}
+
+async function pollTaskStatus(taskId) {
+    const interval = setInterval(async () => {
+        try {
+            const response = await fetch(`/status/${taskId}`);
+            const data = await response.json();
+
+            if (!response.ok) {
+                clearInterval(interval);
+                showAlert(data.error || 'Görev durumu sorgulanırken bir hata oluştu.', 'error');
+                resetButton();
                 return;
             }
 
-            // Yükleniyor durumuna geç
-            btn.disabled = true;
-            btnText.innerText = "Kuyruğa Alınıyor...";
-            spinner.style.display = "block";
-            alertBox.style.display = "none";
+            if (data.status === 'completed') {
+                clearInterval(interval);
+                showAlert('Başarılı! Dosyanız bilgisayarınıza indiriliyor...', 'success');
 
-            try {
-                // Sunucuya görevi oluşturması için istek gönder
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text, voice, provider, vibe, ...edgeSettings(), altyazi: document.getElementById('altyazi').value })
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success && data.task_id) {
-                    showAlert('İşlem sıraya alındı. Ses dosyası hazırlanıyor, lütfen bekleyin...', 'success');
-                    
-                    // Durum sorgulama (polling) döngüsünü başlat
-                    pollTaskStatus(data.task_id);
+                const a = document.createElement('a');
+                const customName = $('filename').value.trim();
+                if (customName) {
+                    a.href = `${data.download_url}?name=${encodeURIComponent(customName)}`;
+                    a.download = customName.toLowerCase().endsWith('.mp3') ? customName : customName + '.mp3';
                 } else {
-                    showAlert(data.error || 'Bir hata oluştu.', 'error');
-                    resetButton();
+                    a.href = data.download_url;
+                    a.download = '';
                 }
-            } catch (error) {
-                showAlert('Sunucuya bağlanılamadı. Lütfen sunucunun çalıştığından emin olun.', 'error');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                if (data.srt_url) {
+                    const s = document.createElement('a');
+                    s.href = customName ? `${data.srt_url}?name=${encodeURIComponent(customName.replace(/\.mp3$/i, ''))}` : data.srt_url;
+                    s.download = '';
+                    document.body.appendChild(s);
+                    setTimeout(() => { s.click(); document.body.removeChild(s); }, 600);
+                }
+
                 resetButton();
+            } else if (data.status === 'failed') {
+                clearInterval(interval);
+                showAlert('Seslendirme başarısız oldu: ' + (data.error || 'Bilinmeyen Hata'), 'error');
+                resetButton();
+            } else if (data.status === 'processing') {
+                $('btnText').innerText = data.progress && data.progress.includes('/')
+                    ? `Ses Üretiliyor... (${data.progress})`
+                    : "Ses Üretiliyor...";
+            } else if (data.status === 'queued') {
+                $('btnText').innerText = "Sırada bekleniyor...";
             }
+        } catch (error) {
+            console.error("Durum sorgulanırken ağ hatası oluştu:", error);
         }
+    }, 3000);
+}
 
-        async function pollTaskStatus(taskId) {
-            const interval = setInterval(async () => {
-                try {
-                    const response = await fetch(`/status/${taskId}`);
-                    const data = await response.json();
+function resetButton() {
+    $('generateBtn').disabled = false;
+    $('btnText').innerText = "▶ Oluştur ve İndir";
+    $('spinner').style.display = "none";
+}
 
-                    if (!response.ok) {
-                        clearInterval(interval);
-                        showAlert(data.error || 'Görev durumu sorgulanırken bir hata oluştu.', 'error');
-                        resetButton();
-                        return;
-                    }
+function showAlert(message, type) {
+    const box = $('statusAlert');
+    box.innerText = message;
+    box.className = 'alert ' + type;
+    box.style.display = 'block';
+}
 
-                    if (data.status === 'completed') {
-                        clearInterval(interval);
-                        showAlert('Başarılı! Dosyanız bilgisayarınıza indiriliyor...', 'success');
-                        
-                        // Dosyayı indir
-                        const a = document.createElement('a');
-                        
-                        // Özel dosya adını al ve URL'ye parametre olarak ekle
-                        const customName = document.getElementById('filename').value.trim();
-                        if (customName) {
-                            a.href = `${data.download_url}?name=${encodeURIComponent(customName)}`;
-                            a.download = customName.toLowerCase().endsWith('.mp3') ? customName : customName + '.mp3';
-                        } else {
-                            a.href = data.download_url;
-                            a.download = ''; 
-                        }
-                        
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-
-                        if (data.srt_url) {
-                            const s = document.createElement('a');
-                            s.href = customName ? `${data.srt_url}?name=${encodeURIComponent(customName.replace(/\.mp3$/i, ''))}` : data.srt_url;
-                            s.download = '';
-                            document.body.appendChild(s);
-                            setTimeout(() => { s.click(); document.body.removeChild(s); }, 600);
-                        }
-
-                        resetButton();
-                    } else if (data.status === 'failed') {
-                        clearInterval(interval);
-                        showAlert('Seslendirme başarısız oldu: ' + (data.error || 'Bilinmeyen Hata'), 'error');
-                        resetButton();
-                    } else if (data.status === 'processing') {
-                        // İşlem devam ediyor, kullanıcıyı bilgilendir
-                        const btnText = document.getElementById('btnText');
-                        btnText.innerText = data.progress && data.progress.includes('/')
-                            ? `Ses Üretiliyor... (${data.progress})`
-                            : "Ses Üretiliyor...";
-                    } else if (data.status === 'queued') {
-                        document.getElementById('btnText').innerText = "Sırada bekleniyor...";
-                    }
-                } catch (error) {
-                    // Geçici ağ hataları için sorgulamayı kesmeyip devam edelim
-                    console.error("Durum sorgulanırken ağ hatası oluştu:", error);
-                }
-            }, 3000); // Her 3 saniyede bir kontrol et
-        }
-
-        function resetButton() {
-            const btn = document.getElementById('generateBtn');
-            const btnText = document.getElementById('btnText');
-            const spinner = document.getElementById('spinner');
-            btn.disabled = false;
-            btnText.innerText = "Oluştur ve İndir 📥";
-            spinner.style.display = "none";
-        }
-
-        function showAlert(message, type) {
-            const alertBox = document.getElementById('statusAlert');
-            alertBox.innerText = message;
-            alertBox.className = 'alert ' + type;
-            alertBox.style.display = 'block';
-        }
-    </script>
+selectProvider('edge');
+</script>
 </body>
 </html>
