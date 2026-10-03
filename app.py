@@ -1,11 +1,9 @@
 import os
 import time
-import asyncio
 import threading
 import uuid
-from flask import Flask, render_template, request, send_file, jsonify
-import edge_tts
-from gtts import gTTS
+from flask import Flask, render_template, request, send_file, jsonify, Response
+import edge_motoru
 from openai_tts import OPENAI_SESLER, OPENAI_VIBELER, openai_seslendir
 
 app = Flask(__name__)
@@ -20,12 +18,8 @@ tasks = {}
 # OpenAI motoru tarayıcı açtığı için aynı anda tek iş çalışsın (sunucu belleğini korur)
 openai_kilit = threading.Semaphore(1)
 OPENAI_MAX_KARAKTER = 150000
+EDGE_MAX_KARAKTER = 300000
 DOSYA_OMRU_SN = 60 * 60  # indirilen dosyalar 1 saat sonra silinir
-
-
-async def edge_tts_generate(text, voice, output_path):
-    communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(output_path)
 
 
 def eski_dosyalari_temizle():
@@ -39,9 +33,22 @@ def eski_dosyalari_temizle():
             pass
 
 
-def run_background_tts(task_id, provider, text, voice, vibe, filepath, filename):
+def run_background_tts(task_id, provider, text, voice, vibe, filepath, filename, edge_ayar=None):
+    srt_url = None
     try:
-        if provider == "openai":
+        if provider == "edge":
+            def ilerleme(i, n):
+                tasks[task_id] = {"status": "processing", "progress": f"{i}/{n}"}
+
+            srt = edge_motoru.seslendir(
+                text, voice, *edge_ayar["ayar"], filepath,
+                altyazi=edge_ayar["altyazi"], ilerleme=ilerleme,
+            )
+            if srt:
+                with open(filepath[:-4] + ".srt", "w", encoding="utf-8") as f:
+                    f.write(srt)
+                srt_url = f"/download/{filename[:-4]}.srt"
+        elif provider == "openai":
             tasks[task_id] = {"status": "queued"}
             with openai_kilit:
                 tasks[task_id] = {"status": "processing", "progress": "başlıyor"}
@@ -50,18 +57,12 @@ def run_background_tts(task_id, provider, text, voice, vibe, filepath, filename)
                     tasks[task_id] = {"status": "processing", "progress": f"{i}/{n}"}
 
                 openai_seslendir(text, voice, vibe, filepath, ilerleme)
-        elif voice == "google-tr":
-            # Standart Google Sesi
-            tts = gTTS(text=text, lang="tr", slow=False)
-            tts.save(filepath)
-        else:
-            # Microsoft Edge Yüksek Kaliteli Ses
-            asyncio.run(edge_tts_generate(text, voice, filepath))
 
         # Görev başarılı olarak tamamlandı
         tasks[task_id] = {
             "status": "completed",
-            "download_url": f"/download/{filename}"
+            "download_url": f"/download/{filename}",
+            "srt_url": srt_url,
         }
     except Exception as e:
         # Görev sırasında hata oluştu
@@ -80,12 +81,13 @@ def index():
 def generate():
     data = request.json or {}
     text = data.get("text", "").strip()
-    provider = data.get("provider", "microsoft")
+    provider = "openai" if data.get("provider") == "openai" else "edge"
 
     if not text:
         return jsonify({"error": "Lütfen metin girin."}), 400
 
     vibe = ""
+    edge_ayar = None
     if provider == "openai":
         voice = data.get("voice", "Fable")
         vibe = data.get("vibe", "").strip() or OPENAI_VIBELER["Calm"]
@@ -94,8 +96,13 @@ def generate():
         if len(text) > OPENAI_MAX_KARAKTER:
             return jsonify({"error": f"OpenAI için en fazla {OPENAI_MAX_KARAKTER} karakter girebilirsiniz."}), 400
     else:
-        provider = "microsoft"
         voice = data.get("voice", "tr-TR-AhmetNeural")
+        if len(text) > EDGE_MAX_KARAKTER:
+            return jsonify({"error": f"En fazla {EDGE_MAX_KARAKTER} karakter girebilirsiniz."}), 400
+        edge_ayar = {
+            "ayar": edge_motoru.ayar_dizgisi(data.get("rate"), data.get("volume"), data.get("pitch")),
+            "altyazi": data.get("altyazi") if data.get("altyazi") in ("cumle", "kelime") else None,
+        }
 
     eski_dosyalari_temizle()
 
@@ -112,7 +119,7 @@ def generate():
     # Arka planda seslendirme işini başlat
     thread = threading.Thread(
         target=run_background_tts,
-        args=(task_id, provider, text, voice, vibe, filepath, filename),
+        args=(task_id, provider, text, voice, vibe, filepath, filename, edge_ayar),
         daemon=True
     )
     thread.start()
@@ -122,6 +129,26 @@ def generate():
         "success": True,
         "task_id": task_id
     })
+
+
+@app.route('/api/voices')
+def api_voices():
+    try:
+        return jsonify(edge_motoru.sesleri_getir())
+    except Exception as e:
+        return jsonify({"error": f"Ses listesi alınamadı: {e}"}), 502
+
+
+@app.route('/api/preview', methods=['POST'])
+def api_preview():
+    data = request.json or {}
+    voice = data.get("voice", "tr-TR-AhmetNeural")
+    text = (data.get("text") or "").strip()[:300] or edge_motoru.ornek_metin(voice)
+    ayar = edge_motoru.ayar_dizgisi(data.get("rate"), data.get("volume"), data.get("pitch"))
+    try:
+        return Response(edge_motoru.onizleme(voice, text, *ayar), mimetype="audio/mpeg")
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
 
 
 @app.route('/status/<task_id>', methods=['GET'])
@@ -138,11 +165,12 @@ def download(filename):
     filepath = os.path.join(DOWNLOAD_FOLDER, filename)
     if os.path.exists(filepath):
         custom_name = request.args.get('name')
+        uzanti = os.path.splitext(filename)[1]
         response = send_file(filepath, as_attachment=True)
         if custom_name:
             # Türkçe karakterlerin ve boşlukların sorunsuz inmesi için güvenli formatlama yapıyoruz
-            if not custom_name.lower().endswith('.mp3'):
-                custom_name += '.mp3'
+            if not custom_name.lower().endswith(uzanti):
+                custom_name += uzanti
             # Tarayıcıya yeni dosya adını bildiriyoruz
             response.headers["Content-Disposition"] = f"attachment; filename={custom_name}"
         return response
